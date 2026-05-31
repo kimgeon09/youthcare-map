@@ -77,9 +77,9 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 신고 독려 팝업 배너 */
-#notice-popup{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:850;background:#1a1225;border:1px solid rgba(180,100,255,0.4);border-radius:12px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.6);overflow:hidden;transition:all .2s}
+#notice-popup{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:850;background:#1a1225;border:1px solid rgba(180,100,255,0.4);border-radius:12px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.6);overflow:visible;transition:all .2s}
 #notice-popup.hidden{display:none}
-#notice-popup-img{width:100%;display:block;cursor:pointer}
+#notice-popup-img-wrap{border-radius:12px 12px 0 0;overflow:hidden}#notice-popup-img{width:100%;display:block;cursor:pointer}
 #notice-popup-img:hover{opacity:.92}
 #notice-popup-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#120d1a;border-top:1px solid rgba(180,100,255,0.2)}
 #notice-popup-check{display:flex;align-items:center;gap:7px;cursor:pointer}
