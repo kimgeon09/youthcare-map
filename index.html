@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>유스케어 — 청소년 노동권 침해 익명 제보 지도</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#0d0d0d;--surface:#161616;--surface2:#1e1e1e;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0f0f0;--text2:#999;--text3:#555;
+  --accent:#e8ff47;
+  --wage:#4fa3ff;--hour:#ff8c4f;--unsafe:#ff4f4f;--contract:#4fca7a;--abuse:#b47eff;
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',sans-serif;background:var(--bg);color:var(--text)}
+
+#header{position:fixed;top:0;left:0;right:0;z-index:1000;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:rgba(13,13,13,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+#header-logo{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;letter-spacing:-0.5px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+#header-right{display:flex;align-items:center;gap:8px}
+.hstat{font-size:12px;color:var(--text2)}
+.hstat strong{color:var(--text)}
+.hbtn{padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.hbtn:hover{color:var(--text);background:var(--surface2)}
+#report-btn{padding:7px 14px;border-radius:20px;background:var(--accent);color:#0d0d0d;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap}
+
+#map{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:0}
+
+#filter-bar{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:900;display:flex;gap:4px;align-items:center;background:rgba(18,18,18,0.93);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:40px;padding:5px 8px;white-space:nowrap}
+.fbtn{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s}
+.fbtn.active{color:#0d0d0d}
+.fbtn[data-type="all"].active{background:var(--accent)}
+.fbtn[data-type="wage"].active{background:var(--wage)}
+.fbtn[data-type="hour"].active{background:var(--hour)}
+.fbtn[data-type="unsafe"].active{background:var(--unsafe)}
+.fbtn[data-type="contract"].active{background:var(--contract)}
+.fbtn[data-type="abuse"].active{background:var(--abuse)}
+
+#side-panel{position:fixed;top:52px;right:0;bottom:0;width:340px;z-index:800;background:rgba(14,14,14,0.97);backdrop-filter:blur(14px);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+#side-panel.open{transform:translateX(0)}
+#panel-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+#panel-title{font-size:13px;font-weight:600}
+#panel-count{font-size:11px;color:var(--text2);margin-top:2px}
+#panel-close{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#panel-list{flex:1;overflow-y:auto;padding:10px}
+#panel-list::-webkit-scrollbar{width:3px}
+#panel-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.report-item{padding:11px 13px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);margin-bottom:7px;cursor:pointer;transition:border-color .15s,background .15s}
+.report-item:hover{border-color:var(--border2);background:var(--surface2)}
+.report-item.active{border-color:var(--accent)}
+.type-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;display:inline-block;margin-bottom:6px}
+.bw{background:rgba(79,163,255,.15);color:var(--wage)}.bh{background:rgba(255,140,79,.15);color:var(--hour)}
+.bu{background:rgba(255,79,79,.15);color:var(--unsafe)}.bc{background:rgba(79,202,122,.15);color:var(--contract)}
+.ba{background:rgba(180,126,255,.15);color:var(--abuse)}
+.ri-biz{font-size:13px;font-weight:600;margin-bottom:2px}.ri-sub{font-size:11px;color:var(--text2);margin-bottom:3px}
+.ri-loc{font-size:11px;color:var(--text3);margin-bottom:5px}.ri-desc{font-size:11px;color:var(--text2);line-height:1.6}
+.ri-date{font-size:10px;color:var(--text3);margin-top:5px}
+
+#counter{position:fixed;bottom:20px;left:16px;z-index:800;background:rgba(16,16,16,0.92);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px}
+.cr{display:flex;align-items:center;gap:7px;margin-bottom:4px}.cr:last-child{margin-bottom:0}
+.cdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}.clabel{font-size:11px;color:var(--text2);flex:1;min-width:70px}.cnum{font-size:11px;font-weight:700}
+
+#list-toggle{position:fixed;bottom:20px;right:0;z-index:850;background:rgba(16,16,16,0.92);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;padding:10px 10px 10px 12px;cursor:pointer;color:var(--text2);font-size:11px;font-weight:600;writing-mode:vertical-rl;letter-spacing:2px;transition:color .15s,background .15s}
+#list-toggle:hover{color:var(--text);background:var(--surface2)}
+
+#loading-overlay{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#loading-overlay.hidden{display:none}
+.ldot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:ldot 1.2s infinite}
+@keyframes ldot{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);z-index:1500;background:var(--surface2);border:1px solid var(--accent);border-radius:var(--radius);padding:10px 20px;font-size:12px;color:var(--accent);white-space:nowrap;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 신고 독려 배너 */
+#notice-banner{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:850;background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(232,255,71,0.3);border-radius:var(--radius);padding:12px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;max-width:420px;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+#notice-banner:hover{border-color:var(--accent);transform:translateX(-50%) translateY(-2px)}
+#notice-banner.hidden{display:none}
+.banner-icon{font-size:22px;flex-shrink:0}
+.banner-text{flex:1}
+.banner-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:2px}
+.banner-sub{font-size:11px;color:var(--text2);line-height:1.5}
+.banner-close{color:var(--text3);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0}
+.banner-close:hover{color:var(--text2)}
+
+.modal-bg{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;max-width:92vw;max-height:88vh;overflow-y:auto}
+
+#modal-report .modal-box{width:460px}
+#modal-report h2{font-size:14px;font-weight:700;margin-bottom:14px}
+.notice-box{font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 11px;margin-bottom:14px;line-height:1.6}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fg{margin-bottom:10px}
+.fg label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:500}
+.fg label .req{color:var(--unsafe);margin-left:2px}
+.fg select,.fg input,.fg textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .15s}
+.fg select:focus,.fg input:focus,.fg textarea:focus{border-color:var(--accent)}
+.fg input.error{border-color:var(--unsafe)}
+.fg textarea{min-height:72px;resize:vertical}
+.mbtns{display:flex;gap:8px;margin-top:14px}
+.btn-cancel{padding:9px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer}
+.btn-submit{flex:1;padding:9px;border-radius:var(--radius-sm);background:var(--accent);color:#0d0d0d;font-size:12px;font-weight:700;border:none;cursor:pointer}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+
+/* 주소 검색 */
+
+.addr-result{font-size:11px;color:var(--contract);margin-top:4px;display:none}
+
+#modal-about .modal-box{width:560px}
+.about-logo{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.about-logo-text{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.about-logo-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.about-section{margin-bottom:20px}
+.about-section h3{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase}
+.about-section p{font-size:13px;color:var(--text2);line-height:1.9}
+.about-legend{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.legend-row{display:flex;align-items:center;gap:10px}
+.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.about-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.about-close-btn{width:100%;padding:10px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-size:13px;cursor:pointer;margin-top:4px}
+
+.leaflet-popup-content-wrapper{background:rgba(22,22,22,0.97)!important;border:1px solid rgba(255,255,255,0.14)!important;border-radius:10px!important;color:#f0f0f0!important;box-shadow:0 4px 20px rgba(0,0,0,.5)!important}
+.leaflet-popup-tip{background:rgba(22,22,22,0.97)!important}
+.leaflet-popup-content{margin:12px 14px!important;font-family:-apple-system,sans-serif}
+.popup-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;display:inline-block;margin-bottom:7px}
+.popup-biz{font-size:13px;font-weight:700;margin-bottom:3px;color:#f0f0f0}
+.popup-addr{font-size:11px;color:#888;margin-bottom:4px}
+.popup-loc{font-size:11px;color:#555;margin-bottom:6px}
+.popup-desc{font-size:11px;color:#bbb;line-height:1.6;max-width:220px}
+.leaflet-container{background:#1a1f1a!important}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div style="display:flex;gap:8px">
+    <div class="ldot" style="animation-delay:0s"></div>
+    <div class="ldot" style="animation-delay:.2s"></div>
+    <div class="ldot" style="animation-delay:.4s"></div>
+  </div>
+  <p style="font-size:13px;color:#999">제보 데이터를 불러오는 중...</p>
+</div>
+
+<div id="toast"></div>
+
+<!-- 신고 독려 배너 -->
+<div id="notice-banner" onclick="window.open('https://minwon.moel.go.kr/minwon/jalo/jalo01List.do','_blank')">
+  <div class="banner-icon">⚖️</div>
+  <div class="banner-text">
+    <div class="banner-title">노동권 침해, 주저하지 말고 신고하세요!</div>
+    <div class="banner-sub">고용노동부 공식 신고센터 · 청소년 노동권 침해 즉시 신고 가능<br>신고는 무료이며 익명으로도 가능합니다 →</div>
+  </div>
+  <span class="banner-close" onclick="event.stopPropagation();document.getElementById('notice-banner').classList.add('hidden')">✕</span>
+</div>
+
+<div id="header">
+  <div id="header-logo">
+    <div class="dot"></div>
+    유스케어<span style="font-weight:400;color:var(--text2);font-size:12px;margin-left:4px">· 청소년 노동권 지도</span>
+  </div>
+  <div id="header-right">
+    <div class="hstat">전체 <strong id="hs-total">0</strong>건</div>
+    <button class="hbtn" id="about-btn">About</button>
+    <button class="hbtn" id="list-btn">목록보기</button>
+    <button id="report-btn">+ 제보하기</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div id="filter-bar">
+  <button class="fbtn active" data-type="all">전체</button>
+  <button class="fbtn" data-type="wage" style="color:var(--wage)">● 임금 체불</button>
+  <button class="fbtn" data-type="hour" style="color:var(--hour)">● 초과 근무</button>
+  <button class="fbtn" data-type="unsafe" style="color:var(--unsafe)">● 위험 환경</button>
+  <button class="fbtn" data-type="contract" style="color:var(--contract)">● 계약 미작성</button>
+  <button class="fbtn" data-type="abuse" style="color:var(--abuse)">● 폭력·폭언</button>
+</div>
+
+<button id="list-toggle" onclick="togglePanel()">목록보기</button>
+
+<div id="side-panel">
+  <div id="panel-header">
+    <div><div id="panel-title">📋 제보 현황</div><div id="panel-count"></div></div>
+    <button id="panel-close" onclick="togglePanel()">✕</button>
+  </div>
+  <div id="panel-list"></div>
+</div>
+
+<div id="counter">
+  <div class="cr"><div class="cdot" style="background:var(--wage)"></div><span class="clabel">임금 체불</span><span class="cnum" id="c-wage">0</span></div>
+  <div class="cr"><div class="cdot" style="background:var(--hour)"></div><span class="clabel">초과 근무</span><span class="cnum" id="c-hour">0</span></div>
+  <div class="cr"><div class="cdot" style="background:var(--unsafe)"></div><span class="clabel">위험 환경</span><span class="cnum" id="c-unsafe">0</span></div>
+  <div class="cr"><div class="cdot" style="background:var(--contract)"></div><span class="clabel">계약 미작성</span><span class="cnum" id="c-contract">0</span></div>
+  <div class="cr"><div class="cdot" style="background:var(--abuse)"></div><span class="clabel">폭력·폭언</span><span class="cnum" id="c-abuse">0</span></div>
+</div>
+
+<!-- 제보 모달 -->
+<div class="modal-bg" id="modal-report">
+  <div class="modal-box">
+    <h2>📍 익명 제보하기</h2>
+    <div class="notice-box">⚠️ 모든 제보는 익명으로 처리됩니다. 개인 정보는 입력하지 마세요.<br>허위 제보는 법적 책임이 따를 수 있습니다. <strong style="color:var(--accent)">상호명과 도로명주소는 필수</strong>입니다.<br><span style="color:var(--contract)">💡 도로명주소 확인 방법: </span><a href="https://map.naver.com" target="_blank" style="color:var(--accent)">네이버 지도</a> 또는 <a href="https://map.kakao.com" target="_blank" style="color:var(--accent)">카카오맵</a>에서 상호명 검색 후 주소 확인</div>
+
+    <!-- 시도/시군구 -->
+    <div class="frow">
+      <div class="fg">
+        <label>시·도 <span class="req">*</span></label>
+        <select id="f-sido" onchange="updateSigungu()"></select>
+      </div>
+      <div class="fg">
+        <label>시·군·구 <span class="req">*</span></label>
+        <select id="f-sigungu"></select>
+      </div>
+    </div>
+
+    <!-- 상호명 필수 -->
+    <div class="fg">
+      <label>상호명 <span class="req">*</span></label>
+      <input type="text" id="f-bizname" placeholder="예) OO편의점 부평점">
+    </div>
+
+    <!-- 도로명주소 검색 -->
+    <div class="fg">
+      <label>도로명주소 <span class="req">*</span> <span style="font-size:10px;color:var(--text3)">(네이버·카카오맵에서 상호명 검색 → 도로명주소 확인 후 아래 검색)</span></label>
+      <input type="text" id="addr-input" placeholder="예) 인천광역시 부평구 부평대로 168">
+      <div class="addr-result" id="addr-result">✅ 좌표 자동 입력 완료</div>
+    </div>
+
+    <div class="fg">
+      <label>침해 유형 <span class="req">*</span></label>
+      <select id="f-type">
+        <option value="wage">임금 체불 (최저임금 미달·주휴수당 미지급 등)</option>
+        <option value="hour">초과 근무 강요</option>
+        <option value="unsafe">위험한 근무 환경</option>
+        <option value="contract">근로계약서 미작성</option>
+        <option value="abuse">언어·신체 폭력</option>
+      </select>
+    </div>
+
+    <div class="fg">
+      <label>업종</label>
+      <select id="f-industry">
+        <option>편의점·마트</option><option>음식점·카페</option><option>PC방·노래방</option>
+        <option>배달·물류</option><option>의류·잡화</option><option>학원·교육</option>
+        <option>미용·뷰티</option><option>기타</option>
+      </select>
+    </div>
+
+    <div class="fg">
+      <label>상황 설명 <span style="opacity:.4">(선택)</span></label>
+      <textarea id="f-desc" placeholder="어떤 상황이었는지 간략히 적어주세요 (개인 식별 정보 제외)"></textarea>
+    </div>
+
+    <div class="mbtns">
+      <button class="btn-cancel" id="m-cancel">취소</button>
+      <button class="btn-submit" id="m-submit">익명으로 제보하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- About 모달 -->
+<div class="modal-bg" id="modal-about">
+  <div class="modal-box">
+    <div class="about-logo">
+      <div class="dot" style="width:12px;height:12px"></div>
+      <div>
+        <div class="about-logo-text">유스케어</div>
+        <div class="about-logo-sub">Youth Care — 청소년 노동권 침해 익명 제보 지도</div>
+      </div>
+    </div>
+    <div class="about-section">
+      <h3>유스케어란</h3>
+      <p>청소년 아르바이트 현장에서 발생하는 임금 체불, 초과 근무 강요, 위험한 환경, 근로계약서 미작성, 언어·신체 폭력 등 노동권 침해 사례를 익명으로 제보하고 지역별로 시각화하는 플랫폼입니다.</p>
+      <p style="margin-top:10px">근로기준법 제64조(최저연령), 제65조(위험업종 제한), 제70조(야간근로 제한), 제17조(근로계약서 교부)에 따라 청소년은 법적으로 보호받을 권리가 있습니다. 유스케어는 침묵하는 피해자가 익명으로 목소리를 낼 수 있는 공론장입니다.</p>
+    </div>
+    <hr class="about-divider">
+    <div class="about-section">
+      <h3>마커 범례</h3>
+      <div class="about-legend">
+        <div class="legend-row"><div class="legend-dot" style="background:#4fa3ff"></div><span style="font-size:12px;font-weight:600;color:#4fa3ff;min-width:90px">임금 체불</span><span style="font-size:12px;color:var(--text2)">최저임금 미달, 주휴수당·연장수당 미지급 등</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff8c4f"></div><span style="font-size:12px;font-weight:600;color:#ff8c4f;min-width:90px">초과 근무 강요</span><span style="font-size:12px;color:var(--text2)">법정 근로시간(1일 7시간) 초과, 휴게시간 미부여</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff4f4f"></div><span style="font-size:12px;font-weight:600;color:#ff4f4f;min-width:90px">위험한 근무 환경</span><span style="font-size:12px;color:var(--text2)">안전장치 미비, 화상·추락 등 위험 방치</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#4fca7a"></div><span style="font-size:12px;font-weight:600;color:#4fca7a;min-width:90px">근로계약서 미작성</span><span style="font-size:12px;color:var(--text2)">서면 계약서 미교부 (근로기준법 제17조 위반)</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#b47eff"></div><span style="font-size:12px;font-weight:600;color:#b47eff;min-width:90px">언어·신체 폭력</span><span style="font-size:12px;color:var(--text2)">폭언, 폭행, 괴롭힘 등</span></div>
+      </div>
+    </div>
+    <hr class="about-divider">
+    <div class="about-section">
+      <h3>공식 신고 방법</h3>
+      <p>노동권 침해를 당했다면 유스케어 제보와 함께 <strong style="color:var(--accent)">고용노동부 공식 신고</strong>도 꼭 하세요. 신고는 무료이며 익명도 가능합니다.</p>
+      <p style="margin-top:8px"><a href="https://minwon.moel.go.kr" target="_blank" style="color:var(--accent)">고용노동부 민원신청 →</a>&nbsp;&nbsp;<a href="tel:1350" style="color:var(--accent)">전화 1350 (고용노동부 상담)</a></p>
+    </div>
+    <hr class="about-divider">
+    <div class="about-section">
+      <h3>개인정보</h3>
+      <p>유스케어는 통계 이외의 목적으로 개인 식별 정보를 수집하지 않습니다. 제보 내용은 Supabase 클라우드 DB에 익명으로 저장됩니다.</p>
+    </div>
+    <button class="about-close-btn" onclick="document.getElementById('modal-about').classList.remove('open')">닫기</button>
+  </div>
+</div>
+
+<script>
+// ── Supabase ──
+const SUPABASE_URL='https://lvwviplgtsxwoljpedlc.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2d3ZpcGxndHN4d29sanBlZGxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTUyNDAsImV4cCI6MjA5NTc5MTI0MH0.s9zmNBikhUoIrhrgrf_1H2Z6mBGlnoTPX8t00_kVdJo';
+const API=`${SUPABASE_URL}/rest/v1/reports`;
+const HEADERS={'apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'};
+
+// ── 전국 시도/시군구 ──
+const SIDO_SIGUNGU = {
+  '서울특별시':['강남구','강동구','강북구','강서구','관악구','광진구','구로구','금천구','노원구','도봉구','동대문구','동작구','마포구','서대문구','서초구','성동구','성북구','송파구','양천구','영등포구','용산구','은평구','종로구','중구','중랑구'],
+  '부산광역시':['강서구','금정구','기장군','남구','동구','동래구','부산진구','북구','사상구','사하구','서구','수영구','연제구','영도구','중구','해운대구'],
+  '대구광역시':['군위군','남구','달성군','달서구','동구','북구','서구','수성구','중구'],
+  '인천광역시':['강화군','계양구','남동구','동구','미추홀구','부평구','서구','연수구','옹진군','중구'],
+  '광주광역시':['광산구','남구','동구','북구','서구'],
+  '대전광역시':['대덕구','동구','서구','유성구','중구'],
+  '울산광역시':['남구','동구','북구','울주군','중구'],
+  '세종특별자치시':['세종시'],
+  '경기도':['가평군','고양시','과천시','광명시','광주시','구리시','군포시','김포시','남양주시','동두천시','부천시','성남시','수원시','시흥시','안산시','안성시','안양시','양주시','양평군','여주시','연천군','오산시','용인시','의왕시','의정부시','이천시','파주시','평택시','포천시','하남시','화성시'],
+  '강원특별자치도':['강릉시','고성군','동해시','삼척시','속초시','양구군','양양군','영월군','원주시','인제군','정선군','철원군','춘천시','태백시','평창군','홍천군','화천군','횡성군'],
+  '충청북도':['괴산군','단양군','보은군','영동군','옥천군','음성군','제천시','증평군','진천군','청주시','충주시'],
+  '충청남도':['계룡시','공주시','금산군','논산시','당진시','보령시','부여군','서산시','서천군','아산시','예산군','천안시','청양군','태안군','홍성군'],
+  '전북특별자치도':['고창군','군산시','김제시','남원시','무주군','부안군','순창군','완주군','익산시','임실군','장수군','전주시','정읍시','진안군'],
+  '전라남도':['강진군','고흥군','곡성군','광양시','구례군','나주시','담양군','목포시','무안군','보성군','순천시','신안군','여수시','영광군','영암군','완도군','장성군','장흥군','진도군','함평군','해남군','화순군'],
+  '경상북도':['경산시','경주시','고령군','구미시','군위군','김천시','문경시','봉화군','상주시','성주군','안동시','영덕군','영양군','영주시','영천시','예천군','울릉군','울진군','의성군','청도군','청송군','칠곡군','포항시'],
+  '경상남도':['거제시','거창군','고성군','김해시','남해군','밀양시','사천시','산청군','양산시','의령군','진주시','창녕군','창원시','통영시','하동군','함안군','함양군','합천군'],
+  '제주특별자치도':['서귀포시','제주시'],
+};
+
+const TYPE_COLOR={wage:'#4fa3ff',hour:'#ff8c4f',unsafe:'#ff4f4f',contract:'#4fca7a',abuse:'#b47eff'};
+const TYPE_LABEL={wage:'임금 체불',hour:'초과 근무 강요',unsafe:'위험한 근무 환경',contract:'근로계약서 미작성',abuse:'언어·신체 폭력'};
+const BADGE_CLS={wage:'bw',hour:'bh',unsafe:'bu',contract:'bc',abuse:'ba'};
+
+let reports=[],activeFilter='all',leafletMarkers=[],lastCount=0;
+let selectedLat=null,selectedLng=null,selectedAddr='';
+
+// ── 지도 ──
+const map=L.map('map',{center:[37.4750,126.6700],zoom:12});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+
+// ── Supabase ──
+async function fetchReports(){
+  try{
+    const res=await fetch(`${API}?select=*&order=created_at.desc`,{headers:HEADERS});
+    if(!res.ok) throw new Error(await res.text());
+    return await res.json();
+  }catch(e){console.error(e);return null;}
+}
+async function insertReport(data){
+  const res=await fetch(API,{method:'POST',headers:HEADERS,body:JSON.stringify(data)});
+  if(!res.ok) throw new Error(await res.text());
+  return await res.json();
+}
+function startPolling(){
+  setInterval(async()=>{
+    const data=await fetchReports();
+    if(!data) return;
+    if(data.length>lastCount&&lastCount>0) showToast(`새 제보 ${data.length-lastCount}건이 등록되었습니다 📍`);
+    if(data.length!==lastCount){reports=data;lastCount=data.length;renderMarkers();renderList();updateStats();}
+  },5000);
+}
+
+// ── 주소기반산업지원서비스(juso.go.kr) 팝업 ──
+const JUSO_KEY=/Mobi|Android|iPhone/i.test(navigator.userAgent)?'U01TX0FVVEgyMDI2MDUzMTIyNTExOTExODk2NzM=':'U01TX0FVVEgyMDI2MDUzMTIzMDU0NzExODk2NzQ=';
+
+function openAddrSearch(){
+  const width=570,height=650;
+  const left=Math.round((screen.width-width)/2);
+  const top=Math.round((screen.height-height)/2);
+  const returnUrl=encodeURIComponent(window.location.href.split('?')[0]+'?jusoResult=1');
+  const url=`https://www.juso.go.kr/addrlink/addrLinkUrl.do?confmKey=${JUSO_KEY}&returnUrl=${returnUrl}&resultType=4`;
+  const popup=window.open(url,'jusoPopup',`width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
+  // 팝업에서 선택 후 부모창 함수 호출
+  window.jusoCallBack=function(roadFullAddr,roadAddrPart1,addrDetail){
+    document.getElementById('addr-input').value=roadFullAddr;
+    selectedAddr=roadFullAddr;
+    const el=document.getElementById('addr-result');
+    el.style.display='block';
+    el.style.color='var(--contract)';
+    el.textContent='🔍 좌표 변환 중...';
+    geocodeAddress(roadFullAddr);
+    if(popup&&!popup.closed) popup.close();
+  };
+}
+
+// Nominatim 지오코딩으로 좌표 변환
+async function geocodeAddress(addr){
+  try{
+    const q=encodeURIComponent('대한민국 '+addr);
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+    const data=await res.json();
+    const el=document.getElementById('addr-result');
+    if(data&&data[0]){
+      selectedLat=parseFloat(data[0].lat);
+      selectedLng=parseFloat(data[0].lon);
+      el.style.color='var(--contract)';
+      el.textContent=`✅ 좌표 자동 입력 완료 (${selectedLat.toFixed(4)}, ${selectedLng.toFixed(4)})`;
+    }else{
+      el.style.color='var(--hour)';
+      el.textContent='⚠️ 좌표를 찾지 못했습니다. 구 단위로 표시됩니다.';
+      selectedLat=null;selectedLng=null;
+    }
+  }catch(e){
+    selectedLat=null;selectedLng=null;
+  }
+}
+
+// ── 시도/시군구 초기화 ──
+function initSido(){
+  const sel=document.getElementById('f-sido');sel.innerHTML='';
+  Object.keys(SIDO_SIGUNGU).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  // 기본값 인천
+  sel.value='인천광역시';
+  updateSigungu();
+}
+function updateSigungu(){
+  const sido=document.getElementById('f-sido').value;
+  const sel=document.getElementById('f-sigungu');sel.innerHTML='';
+  (SIDO_SIGUNGU[sido]||[]).forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+}
+
+// ── 마커 ──
+function makeIcon(type){
+  const color=TYPE_COLOR[type];
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34"><ellipse cx="13" cy="31" rx="5" ry="2.5" fill="rgba(0,0,0,0.3)"/><path d="M13 0C7.48 0 3 4.48 3 10c0 7.5 10 21 10 21S23 17.5 23 10C23 4.48 18.52 0 13 0z" fill="${color}"/><circle cx="13" cy="10" r="4.5" fill="rgba(255,255,255,0.3)"/></svg>`;
+  return L.divIcon({html:svg,className:'',iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-36]});
+}
+function popupHTML(r){
+  return `<span class="popup-type ${BADGE_CLS[r.type]}">${TYPE_LABEL[r.type]}</span>
+<div class="popup-biz">${r.bizname||r.industry}</div>
+${r.bizname?`<div class="popup-addr">${r.industry}</div>`:''}
+<div class="popup-addr">🏠 ${r.addr||''}</div>
+<div class="popup-loc">📍 ${r.sido||''} ${r.sigungu||''}</div>
+<div class="popup-desc">${r.description||''}</div>
+<div style="font-size:10px;color:#555;margin-top:6px">${r.date||''}</div>`;
+}
+function renderMarkers(){
+  leafletMarkers.forEach(m=>map.removeLayer(m));leafletMarkers=[];
+  const filtered=activeFilter==='all'?reports:reports.filter(r=>r.type===activeFilter);
+  filtered.forEach(r=>{
+    if(!r.lat||!r.lng) return;
+    const m=L.marker([r.lat,r.lng],{icon:makeIcon(r.type)}).addTo(map).bindPopup(popupHTML(r),{maxWidth:260});
+    m.reportId=r.id;
+    m.on('click',()=>{
+      document.querySelectorAll('.report-item').forEach(el=>el.classList.remove('active'));
+      const el=document.querySelector(`.report-item[data-id="${r.id}"]`);
+      if(el){el.classList.add('active');el.scrollIntoView({block:'nearest'});}
+    });
+    leafletMarkers.push(m);
+  });
+}
+function renderList(){
+  const list=document.getElementById('panel-list');
+  const filtered=activeFilter==='all'?reports:reports.filter(r=>r.type===activeFilter);
+  document.getElementById('panel-count').textContent=filtered.length+'건 등록됨';
+  list.innerHTML='';
+  if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:28px;font-size:12px;color:var(--text3)">해당 유형의 제보가 없습니다</div>';return;}
+  filtered.forEach(r=>{
+    const el=document.createElement('div');el.className='report-item';el.dataset.id=r.id;
+    el.innerHTML=`<span class="type-badge ${BADGE_CLS[r.type]}">${TYPE_LABEL[r.type]}</span>
+      <div class="ri-biz">${r.bizname||r.industry}</div>
+      ${r.bizname?`<div class="ri-sub">${r.industry}</div>`:''}
+      <div class="ri-loc">🏠 ${r.addr||''}</div>
+      <div class="ri-loc">📍 ${r.sido||''} ${r.sigungu||''}</div>
+      <div class="ri-desc">${r.description||''}</div>
+      <div class="ri-date">${r.date||''}</div>`;
+    el.onclick=()=>{
+      document.querySelectorAll('.report-item').forEach(e=>e.classList.remove('active'));
+      el.classList.add('active');
+      if(r.lat&&r.lng) map.setView([r.lat,r.lng],17);
+      const m=leafletMarkers.find(x=>x.reportId===r.id);
+      if(m) m.openPopup();
+    };
+    list.appendChild(el);
+  });
+}
+function updateStats(){
+  document.getElementById('hs-total').textContent=reports.length;
+  ['wage','hour','unsafe','contract','abuse'].forEach(t=>{document.getElementById('c-'+t).textContent=reports.filter(r=>r.type===t).length;});
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function togglePanel(){document.getElementById('side-panel').classList.toggle('open');}
+
+document.getElementById('filter-bar').addEventListener('click',e=>{
+  const btn=e.target.closest('.fbtn');if(!btn)return;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');activeFilter=btn.dataset.type;
+  renderMarkers();renderList();updateStats();
+});
+document.getElementById('list-btn').onclick=()=>togglePanel();
+document.getElementById('about-btn').onclick=()=>document.getElementById('modal-about').classList.add('open');
+document.getElementById('modal-about').addEventListener('click',e=>{if(e.target===document.getElementById('modal-about'))document.getElementById('modal-about').classList.remove('open');});
+
+// 주소 입력창 blur 시 자동 좌표 변환
+document.getElementById('addr-input').addEventListener('blur',function(){
+  const addr=this.value.trim();
+  if(addr.length>4){
+    const el=document.getElementById('addr-result');
+    el.style.display='block';
+    el.style.color='var(--contract)';
+    el.textContent='🔍 좌표 변환 중...';
+    geocodeAddress(addr);
+  }
+});
+
+document.getElementById('report-btn').onclick=()=>{
+  initSido();
+  selectedLat=null;selectedLng=null;selectedAddr='';
+  document.getElementById('addr-input').value='';
+  document.getElementById('addr-result').style.display='none';
+  document.getElementById('modal-report').classList.add('open');
+};
+document.getElementById('m-cancel').onclick=()=>document.getElementById('modal-report').classList.remove('open');
+document.getElementById('modal-report').addEventListener('click',e=>{if(e.target===document.getElementById('modal-report'))document.getElementById('modal-report').classList.remove('open');});
+
+document.getElementById('m-submit').onclick=async()=>{
+  const bizname=document.getElementById('f-bizname').value.trim();
+  const addr=document.getElementById('addr-input').value.trim();
+  if(!bizname){document.getElementById('f-bizname').classList.add('error');showToast('상호명을 입력해주세요');return;}
+  if(!addr){showToast('도로명주소를 검색해주세요');return;}
+  document.getElementById('f-bizname').classList.remove('error');
+
+  const sido=document.getElementById('f-sido').value;
+  const sigungu=document.getElementById('f-sigungu').value;
+  const type=document.getElementById('f-type').value;
+  const industry=document.getElementById('f-industry').value;
+  const description=document.getElementById('f-desc').value.trim();
+  const now=new Date();
+  const date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  // 좌표 없으면 시도 기반 fallback
+  const SIDO_LATLNG={'서울특별시':[37.5665,126.9780],'부산광역시':[35.1796,129.0756],'대구광역시':[35.8714,128.6014],'인천광역시':[37.4563,126.7052],'광주광역시':[35.1595,126.8526],'대전광역시':[36.3504,127.3845],'울산광역시':[35.5384,129.3114],'세종특별자치시':[36.4801,127.2890],'경기도':[37.4138,127.5183],'강원특별자치도':[37.8228,128.1555],'충청북도':[36.6357,127.4913],'충청남도':[36.5184,126.8000],'전북특별자치도':[35.7175,127.1530],'전라남도':[34.8679,126.9910],'경상북도':[36.4919,128.8889],'경상남도':[35.4606,128.2132],'제주특별자치도':[33.4890,126.4983]};
+  let lat=selectedLat,lng=selectedLng;
+  if(!lat||!lng){
+    const base=SIDO_LATLNG[sido]||[37.4563,126.7052];
+    lat=base[0]+(Math.random()-.5)*.02;
+    lng=base[1]+(Math.random()-.5)*.025;
+  }
+
+  const btn=document.getElementById('m-submit');
+  btn.disabled=true;btn.textContent='저장 중...';
+  try{
+    await insertReport({sido,sigungu,bizname,addr,type,industry,description,date,lat,lng});
+    document.getElementById('f-desc').value='';
+    document.getElementById('modal-report').classList.remove('open');
+    const data=await fetchReports();
+    if(data){reports=data;lastCount=data.length;renderMarkers();renderList();updateStats();}
+    map.setView([lat,lng],17);
+    document.getElementById('side-panel').classList.add('open');
+    showToast('제보가 등록되었습니다 ✅');
+  }catch(e){alert('오류: '+e.message);}
+  finally{btn.disabled=false;btn.textContent='익명으로 제보하기';}
+};
+
+(async()=>{
+  const data=await fetchReports();
+  document.getElementById('loading-overlay').classList.add('hidden');
+  if(data){reports=data;lastCount=data.length;renderMarkers();renderList();updateStats();}
+  startPolling();
+})();
+</script>
+</body>
+</html>
