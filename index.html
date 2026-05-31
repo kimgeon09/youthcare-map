@@ -205,17 +205,17 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 
 <!-- 신고 독려 배너 -->
 <div id="notice-popup">
-  <div id="notice-popup-img-wrap" onclick="goMinwon()">
-    <img id="notice-popup-img"
-      src="https://kimgeon09.github.io/youthcare-map/notice.png"
-      onerror="this.style.display='none';document.getElementById('notice-popup-fallback').style.display='block'"
-      alt="18세 미만 근로자는 더 많은 보호가 필요합니다 - 고용노동부">
-    <div id="notice-popup-fallback" style="display:none;padding:20px 16px;text-align:center;background:linear-gradient(135deg,#2a1040,#1a0830)">
-      <div style="font-size:28px;margin-bottom:10px">⚖️</div>
-      <div style="font-size:15px;font-weight:800;color:#b47eff;margin-bottom:6px;line-height:1.4">18세 미만 근로자는<br>더 많은 보호가 필요합니다</div>
-      <div style="font-size:11px;color:#aaa;margin-bottom:14px">성인 근로기준법 + 청소년 추가 보호</div>
-      <div style="display:inline-block;padding:8px 20px;background:#b47eff;color:#fff;border-radius:6px;font-size:12px;font-weight:700">고용노동부 공식 신고 →</div>
-    </div>
+  <img id="notice-popup-img"
+    src="https://kimgeon09.github.io/youthcare-map/notice.png"
+    onerror="this.style.display='none';document.getElementById('notice-popup-fallback').style.display='block'"
+    alt="18세 미만 근로자는 더 많은 보호가 필요합니다 - 고용노동부"
+    onclick="location.href='https://minwon.moel.go.kr/minwon/jalo/jalo01List.do'"
+    style="width:100%;display:block;cursor:pointer;border-radius:12px 12px 0 0">
+  <div id="notice-popup-fallback" style="display:none;padding:20px 16px;text-align:center;background:linear-gradient(135deg,#2a1040,#1a0830);border-radius:12px 12px 0 0;cursor:pointer" onclick="location.href='https://minwon.moel.go.kr/minwon/jalo/jalo01List.do'">
+    <div style="font-size:28px;margin-bottom:10px">⚖️</div>
+    <div style="font-size:15px;font-weight:800;color:#b47eff;margin-bottom:6px;line-height:1.4">18세 미만 근로자는<br>더 많은 보호가 필요합니다</div>
+    <div style="font-size:11px;color:#aaa;margin-bottom:14px">성인 근로기준법 + 청소년 추가 보호</div>
+    <div style="display:inline-block;padding:8px 20px;background:#b47eff;color:#fff;border-radius:6px;font-size:12px;font-weight:700">고용노동부 공식 신고 →</div>
   </div>
   <div id="notice-popup-footer">
     <button id="notice-close-btn" onclick="document.getElementById('notice-popup').classList.add('hidden')">닫기</button>
