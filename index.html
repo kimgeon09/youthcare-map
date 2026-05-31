@@ -77,16 +77,14 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 신고 독려 팝업 배너 */
-#notice-popup{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:850;background:#1a1225;border:1px solid rgba(180,100,255,0.4);border-radius:12px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.6);overflow:visible;transition:all .2s}
+#notice-popup{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1225;border:1px solid rgba(180,100,255,0.4);border-radius:12px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:all .2s}
 #notice-popup.hidden{display:none}
-#notice-popup-img-wrap{border-radius:12px 12px 0 0;overflow:hidden}#notice-popup-img{width:100%;display:block;cursor:pointer}
+#notice-popup-img-wrap{border-radius:12px 12px 0 0;overflow:hidden;cursor:pointer}
+#notice-popup-img{width:100%;display:block}
 #notice-popup-img:hover{opacity:.92}
-#notice-popup-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#120d1a;border-top:1px solid rgba(180,100,255,0.2)}
-#notice-popup-check{display:flex;align-items:center;gap:7px;cursor:pointer}
-#notice-popup-check input[type=checkbox]{width:15px;height:15px;accent-color:#b47eff;cursor:pointer}
-#notice-popup-check span{font-size:12px;color:var(--text2)}
-#notice-popup-close{font-size:12px;color:var(--text3);cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s}
-#notice-popup-close:hover{color:var(--text)}
+#notice-popup-footer{display:flex;align-items:center;justify-content:center;padding:10px 14px;background:#120d1a;border-top:1px solid rgba(180,100,255,0.2);border-radius:0 0 12px 12px}
+#notice-close-btn{background:#b47eff;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;padding:7px 32px;border-radius:6px;width:100%}
+#notice-close-btn:hover{background:#c89fff}
 
 .modal-bg{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
@@ -207,12 +205,11 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 
 <!-- 신고 독려 배너 -->
 <div id="notice-popup">
-  <div id="notice-popup-img-wrap" onclick="window.open('https://minwon.moel.go.kr/minwon/jalo/jalo01List.do','_blank')" style="cursor:pointer">
+  <div id="notice-popup-img-wrap" onclick="goMinwon()">
     <img id="notice-popup-img"
-      src="https://raw.githubusercontent.com/kimgeon09/youthcare-map/main/notice.png"
+      src="https://kimgeon09.github.io/youthcare-map/notice.png"
       onerror="this.style.display='none';document.getElementById('notice-popup-fallback').style.display='block'"
-      alt="18세 미만 근로자는 더 많은 보호가 필요합니다 - 고용노동부"
-      style="width:100%;display:block">
+      alt="18세 미만 근로자는 더 많은 보호가 필요합니다 - 고용노동부">
     <div id="notice-popup-fallback" style="display:none;padding:20px 16px;text-align:center;background:linear-gradient(135deg,#2a1040,#1a0830)">
       <div style="font-size:28px;margin-bottom:10px">⚖️</div>
       <div style="font-size:15px;font-weight:800;color:#b47eff;margin-bottom:6px;line-height:1.4">18세 미만 근로자는<br>더 많은 보호가 필요합니다</div>
@@ -221,11 +218,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
     </div>
   </div>
   <div id="notice-popup-footer">
-    <label id="notice-popup-check">
-      <input type="checkbox" id="notice-no-today" onchange="handleNoToday(this)">
-      <span>오늘 하루동안 보지 않기</span>
-    </label>
-    <button onclick="closeNoticePopup()" style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:4px">닫기</button>
+    <button id="notice-close-btn" onclick="document.getElementById('notice-popup').classList.add('hidden')">닫기</button>
   </div>
 </div>
 
@@ -428,30 +421,10 @@ async function insertReport(data){
   return await res.json();
 }
 function startPolling(){
-  setInterval// 팝업 배너 - 오늘 하루 안 보기
-function initNoticePopup(){
-  const hidden=localStorage.getItem('noticeDismissed');
-  if(hidden){
-    const date=new Date(parseInt(hidden));
-    const now=new Date();
-    if(date.toDateString()===now.toDateString()){
-      document.getElementById('notice-popup').classList.add('hidden');
-      return;
-    }
-  }
+  setInterval// 고용노동부 민원 페이지 이동
+function goMinwon(){
+  location.href='https://minwon.moel.go.kr/minwon/jalo/jalo01List.do';
 }
-function closeNoticePopup(){
-  document.getElementById('notice-popup').classList.add('hidden');
-}
-function handleNoToday(cb){
-  if(cb.checked){
-    localStorage.setItem('noticeDismissed', Date.now().toString());
-    document.getElementById('notice-popup').classList.add('hidden');
-  }else{
-    localStorage.removeItem('noticeDismissed');
-  }
-}
-initNoticePopup();
 
 (async()=>{
     const data=await fetchReports();
