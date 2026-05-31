@@ -371,7 +371,7 @@ function startPolling(){
 }
 
 // ── 주소기반산업지원서비스(juso.go.kr) 팝업 ──
-const JUSO_KEY='U01TX0FVVEgyMDI2MDUzMTIyNTExOTExODk2NzM=';
+const JUSO_KEY=/Mobi|Android|iPhone/i.test(navigator.userAgent)?'U01TX0FVVEgyMDI2MDUzMTIyNTExOTExODk2NzM=':'U01TX0FVVEgyMDI2MDUzMTIzMDU0NzExODk2NzQ=';
 
 function openAddrSearch(){
   const width=570,height=650;
