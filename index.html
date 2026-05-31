@@ -76,16 +76,17 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);z-index:1500;background:var(--surface2);border:1px solid var(--accent);border-radius:var(--radius);padding:10px 20px;font-size:12px;color:var(--accent);white-space:nowrap;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* 신고 독려 배너 */
-#notice-banner{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:850;background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid rgba(232,255,71,0.3);border-radius:var(--radius);padding:12px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;max-width:420px;box-shadow:0 4px 20px rgba(0,0,0,.5)}
-#notice-banner:hover{border-color:var(--accent);transform:translateX(-50%) translateY(-2px)}
-#notice-banner.hidden{display:none}
-.banner-icon{font-size:22px;flex-shrink:0}
-.banner-text{flex:1}
-.banner-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:2px}
-.banner-sub{font-size:11px;color:var(--text2);line-height:1.5}
-.banner-close{color:var(--text3);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0}
-.banner-close:hover{color:var(--text2)}
+/* 신고 독려 팝업 배너 */
+#notice-popup{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:850;background:#1a1225;border:1px solid rgba(180,100,255,0.4);border-radius:12px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.6);overflow:hidden;transition:all .2s}
+#notice-popup.hidden{display:none}
+#notice-popup-img{width:100%;display:block;cursor:pointer}
+#notice-popup-img:hover{opacity:.92}
+#notice-popup-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#120d1a;border-top:1px solid rgba(180,100,255,0.2)}
+#notice-popup-check{display:flex;align-items:center;gap:7px;cursor:pointer}
+#notice-popup-check input[type=checkbox]{width:15px;height:15px;accent-color:#b47eff;cursor:pointer}
+#notice-popup-check span{font-size:12px;color:var(--text2)}
+#notice-popup-close{font-size:12px;color:var(--text3);cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s}
+#notice-popup-close:hover{color:var(--text)}
 
 .modal-bg{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
@@ -133,6 +134,62 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 .popup-loc{font-size:11px;color:#555;margin-bottom:6px}
 .popup-desc{font-size:11px;color:#bbb;line-height:1.6;max-width:220px}
 .leaflet-container{background:#1a1f1a!important}
+
+/* ── 모바일 반응형 ── */
+@media (max-width: 768px) {
+  #header { padding: 0 12px; height: 48px; }
+  #header-logo { font-size: 14px; gap: 6px; }
+  #header-logo span { display: none; }
+  #header-right { gap: 6px; }
+  .hstat { display: none; }
+  .hbtn { padding: 5px 10px; font-size: 11px; }
+  #report-btn { padding: 6px 12px; font-size: 11px; }
+
+  #map { top: 48px; }
+
+  #filter-bar {
+    top: 56px;
+    left: 0; right: 0;
+    transform: none;
+    border-radius: 0;
+    border-left: none; border-right: none; border-top: none;
+    padding: 6px 8px;
+    overflow-x: auto;
+    justify-content: flex-start;
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #filter-bar::-webkit-scrollbar { display: none; }
+  .fbtn { padding: 5px 11px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+
+  #side-panel { width: 100%; top: 48px; }
+
+  #counter {
+    bottom: auto;
+    top: 100px;
+    left: 8px;
+    padding: 7px 10px;
+  }
+  .clabel { font-size: 10px; min-width: 55px; }
+  .cnum { font-size: 10px; }
+  .cdot { width: 6px; height: 6px; }
+
+  #list-toggle {
+    bottom: 80px;
+    font-size: 10px;
+    padding: 8px 7px 8px 9px;
+    letter-spacing: 1px;
+  }
+
+  #notice-popup { width: calc(100vw - 32px); bottom: 16px; }
+
+  #modal-report .modal-box { padding: 16px; width: 100%; }
+  #modal-about .modal-box { padding: 16px; width: 100%; }
+  .frow { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .leaflet-control-zoom { margin-bottom: 100px !important; }
+}
 </style>
 </head>
 <body>
@@ -149,13 +206,26 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 <div id="toast"></div>
 
 <!-- 신고 독려 배너 -->
-<div id="notice-banner" onclick="window.open('https://minwon.moel.go.kr/minwon/jalo/jalo01List.do','_blank')">
-  <div class="banner-icon">⚖️</div>
-  <div class="banner-text">
-    <div class="banner-title">노동권 침해, 주저하지 말고 신고하세요!</div>
-    <div class="banner-sub">고용노동부 공식 신고센터 · 청소년 노동권 침해 즉시 신고 가능<br>신고는 무료이며 익명으로도 가능합니다 →</div>
+<div id="notice-popup">
+  <a href="https://minwon.moel.go.kr/minwon/jalo/jalo01List.do" target="_blank" rel="noopener noreferrer">
+    <img id="notice-popup-img"
+      src="https://raw.githubusercontent.com/kimgeon09/youthcare-map/main/notice.png"
+      onerror="this.style.display='none';document.getElementById('notice-popup-fallback').style.display='block'"
+      alt="18세 미만 근로자는 더 많은 보호가 필요합니다 - 고용노동부">
+    <div id="notice-popup-fallback" style="display:none;padding:20px 16px;text-align:center;background:linear-gradient(135deg,#2a1040,#1a0830)">
+      <div style="font-size:28px;margin-bottom:10px">⚖️</div>
+      <div style="font-size:15px;font-weight:800;color:#b47eff;margin-bottom:6px;line-height:1.4">18세 미만 근로자는<br>더 많은 보호가 필요합니다</div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:14px">성인 근로기준법 + 청소년 추가 보호</div>
+      <div style="display:inline-block;padding:8px 20px;background:#b47eff;color:#fff;border-radius:6px;font-size:12px;font-weight:700">고용노동부 공식 신고 →</div>
+    </div>
+  </a>
+  <div id="notice-popup-footer">
+    <label id="notice-popup-check">
+      <input type="checkbox" id="notice-no-today" onchange="handleNoToday(this)">
+      <span>오늘 하루동안 보지 않기</span>
+    </label>
+    <span id="notice-popup-close" onclick="closeNoticePopup()">닫기</span>
   </div>
-  <span class="banner-close" onclick="event.stopPropagation();document.getElementById('notice-banner').classList.add('hidden')">✕</span>
 </div>
 
 <div id="header">
@@ -357,7 +427,32 @@ async function insertReport(data){
   return await res.json();
 }
 function startPolling(){
-  setInterval(async()=>{
+  setInterval// 팝업 배너 - 오늘 하루 안 보기
+function initNoticePopup(){
+  const hidden=localStorage.getItem('noticeDismissed');
+  if(hidden){
+    const date=new Date(parseInt(hidden));
+    const now=new Date();
+    if(date.toDateString()===now.toDateString()){
+      document.getElementById('notice-popup').classList.add('hidden');
+      return;
+    }
+  }
+}
+function closeNoticePopup(){
+  document.getElementById('notice-popup').classList.add('hidden');
+}
+function handleNoToday(cb){
+  if(cb.checked){
+    localStorage.setItem('noticeDismissed', Date.now().toString());
+    document.getElementById('notice-popup').classList.add('hidden');
+  }else{
+    localStorage.removeItem('noticeDismissed');
+  }
+}
+initNoticePopup();
+
+(async()=>{
     const data=await fetchReports();
     if(!data) return;
     if(data.length>lastCount&&lastCount>0) showToast(`새 제보 ${data.length-lastCount}건이 등록되었습니다 📍`);
