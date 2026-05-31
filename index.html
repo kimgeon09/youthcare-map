@@ -370,69 +370,49 @@ function startPolling(){
   },5000);
 }
 
-// ── 행안부 도로명주소 팝업 ──
+// ── 주소기반산업지원서비스(juso.go.kr) 팝업 ──
+const JUSO_KEY='U01TX0FVVEgyMDI2MDUzMTIyNTExOTExODk2NzM=';
+
 function openAddrSearch(){
-  const width=500,height=600;
-  const left=(screen.width-width)/2;
-  const top=(screen.height-height)/2;
-  window._addrCallback=function(data){
-    const addr=data.roadAddress||data.jibunAddress;
-    document.getElementById('addr-input').value=addr;
-    selectedAddr=addr;
-    // 좌표 변환 (nominatim 오픈소스 지오코딩)
-    geocodeAddress(addr);
+  const width=570,height=650;
+  const left=Math.round((screen.width-width)/2);
+  const top=Math.round((screen.height-height)/2);
+  const returnUrl=encodeURIComponent(window.location.href.split('?')[0]+'?jusoResult=1');
+  const url=`https://www.juso.go.kr/addrlink/addrLinkUrl.do?confmKey=${JUSO_KEY}&returnUrl=${returnUrl}&resultType=4`;
+  const popup=window.open(url,'jusoPopup',`width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
+  // 팝업에서 선택 후 부모창 함수 호출
+  window.jusoCallBack=function(roadFullAddr,roadAddrPart1,addrDetail){
+    document.getElementById('addr-input').value=roadFullAddr;
+    selectedAddr=roadFullAddr;
+    const el=document.getElementById('addr-result');
+    el.style.display='block';
+    el.style.color='var(--contract)';
+    el.textContent='🔍 좌표 변환 중...';
+    geocodeAddress(roadFullAddr);
+    if(popup&&!popup.closed) popup.close();
   };
-  window.open(`https://postcode.map.daum.net/search?q=&callback=window._addrCallback`,'addrSearch',`width=${width},height=${height},left=${left},top=${top}`);
 }
 
-// Nominatim으로 좌표 변환
+// Nominatim 지오코딩으로 좌표 변환
 async function geocodeAddress(addr){
   try{
     const q=encodeURIComponent('대한민국 '+addr);
-    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,{headers:{'Accept-Language':'ko'}});
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
     const data=await res.json();
+    const el=document.getElementById('addr-result');
     if(data&&data[0]){
       selectedLat=parseFloat(data[0].lat);
       selectedLng=parseFloat(data[0].lon);
-      document.getElementById('addr-result').style.display='block';
-      document.getElementById('addr-result').textContent=`✅ 좌표 확인: ${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
+      el.style.color='var(--contract)';
+      el.textContent=`✅ 좌표 자동 입력 완료 (${selectedLat.toFixed(4)}, ${selectedLng.toFixed(4)})`;
     }else{
-      // 좌표 못 찾으면 시도/시군구 기반 fallback
-      document.getElementById('addr-result').style.display='block';
-      document.getElementById('addr-result').textContent='⚠️ 정확한 좌표를 찾지 못했습니다. 구 단위로 표시됩니다.';
-      document.getElementById('addr-result').style.color='var(--hour)';
+      el.style.color='var(--hour)';
+      el.textContent='⚠️ 좌표를 찾지 못했습니다. 구 단위로 표시됩니다.';
       selectedLat=null;selectedLng=null;
     }
   }catch(e){
     selectedLat=null;selectedLng=null;
   }
-}
-
-// 카카오 주소 팝업 대신 다음 postcode 팝업 직접 사용
-function openAddrSearch(){
-  // 다음 우편번호 서비스 팝업
-  const popup=window.open('','addrPopup','width=500,height=600,scrollbars=yes');
-  popup.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>주소검색</title></head><body>
-  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"><\/script>
-  <script>
-    new daum.Postcode({
-      oncomplete:function(data){
-        window.opener._addrResult(data);
-        window.close();
-      },
-      width:'100%',height:'100%'
-    }).open();
-  <\/script></body></html>`);
-  popup.document.close();
-  window._addrResult=function(data){
-    const addr=data.roadAddress||data.autoRoadAddress||data.jibunAddress;
-    document.getElementById('addr-input').value=addr;
-    selectedAddr=addr;
-    document.getElementById('addr-result').style.display='block';
-    document.getElementById('addr-result').style.color='var(--contract)';
-    document.getElementById('addr-result').textContent='🔍 좌표 변환 중...';
-    geocodeAddress(addr);
-  };
 }
 
 // ── 시도/시군구 초기화 ──
