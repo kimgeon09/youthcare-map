@@ -296,7 +296,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
     </div>
 
     <div class="fg">
-      <label>사업주 이름 <span style="opacity:.4">(선택)</span></label>
+      <label>사업주 성명 <span class="req">*</span></label>
       <input type="text" id="f-ownername" placeholder="예) 홍길동 (2번째 글자는 *로 처리됩니다)">
     </div>
     <div class="fg">
@@ -603,9 +603,12 @@ document.getElementById('modal-report').addEventListener('click',e=>{if(e.target
 document.getElementById('m-submit').onclick=async()=>{
   const bizname=document.getElementById('f-bizname').value.trim();
   const addr=document.getElementById('addr-input').value.trim();
+  const ownerInput=document.getElementById('f-ownername').value.trim();
   if(!bizname){document.getElementById('f-bizname').classList.add('error');showToast('상호명을 입력해주세요');return;}
   if(!addr){showToast('도로명주소를 검색해주세요');return;}
+  if(!ownerInput){document.getElementById('f-ownername').classList.add('error');showToast('사업주 성명을 입력해주세요');return;}
   document.getElementById('f-bizname').classList.remove('error');
+  document.getElementById('f-ownername').classList.remove('error');
 
   const sido=document.getElementById('f-sido').value;
   const sigungu=document.getElementById('f-sigungu').value;
