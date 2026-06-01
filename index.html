@@ -296,6 +296,10 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
     </div>
 
     <div class="fg">
+      <label>사업주 이름 <span style="opacity:.4">(선택)</span></label>
+      <input type="text" id="f-ownername" placeholder="예) 홍길동 (2번째 글자는 *로 처리됩니다)">
+    </div>
+    <div class="fg">
       <label>침해 유형 <span class="req">*</span></label>
       <select id="f-type">
         <option value="wage">임금 체불 (최저임금 미달·주휴수당 미지급 등)</option>
@@ -421,7 +425,14 @@ async function insertReport(data){
   return await res.json();
 }
 function startPolling(){
-  setInterval// 고용노동부 민원 페이지 이동
+  setInterval// 사업주 이름 마스킹 (2번째 글자 * 처리)
+function maskName(name){
+  if(!name||name.length===0) return '';
+  if(name.length===1) return name;
+  return name[0] + '*' + name.slice(2);
+}
+
+// 고용노동부 민원 페이지 이동
 function goMinwon(){
   location.href='https://labor.moel.go.kr/minwonApply/minwonApply.do?searchGubun=1';
 }
@@ -503,6 +514,7 @@ function popupHTML(r){
   return `<span class="popup-type ${BADGE_CLS[r.type]}">${TYPE_LABEL[r.type]}</span>
 <div class="popup-biz">${r.bizname||r.industry}</div>
 ${r.bizname?`<div class="popup-addr">${r.industry}</div>`:''}
+${r.ownername?`<div class="popup-addr">👤 사업주: ${r.ownername}</div>`:''}
 <div class="popup-addr">🏠 ${r.addr||''}</div>
 <div class="popup-loc">📍 ${r.sido||''} ${r.sigungu||''}</div>
 <div class="popup-desc">${r.description||''}</div>
@@ -534,6 +546,7 @@ function renderList(){
     el.innerHTML=`<span class="type-badge ${BADGE_CLS[r.type]}">${TYPE_LABEL[r.type]}</span>
       <div class="ri-biz">${r.bizname||r.industry}</div>
       ${r.bizname?`<div class="ri-sub">${r.industry}</div>`:''}
+      ${r.ownername?`<div class="ri-sub">👤 사업주: ${r.ownername}</div>`:''}
       <div class="ri-loc">🏠 ${r.addr||''}</div>
       <div class="ri-loc">📍 ${r.sido||''} ${r.sigungu||''}</div>
       <div class="ri-desc">${r.description||''}</div>
@@ -599,6 +612,8 @@ document.getElementById('m-submit').onclick=async()=>{
   const type=document.getElementById('f-type').value;
   const industry=document.getElementById('f-industry').value;
   const description=document.getElementById('f-desc').value.trim();
+  const ownerRaw=document.getElementById('f-ownername').value.trim();
+  const ownername=maskName(ownerRaw);
   const now=new Date();
   const date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
@@ -614,7 +629,7 @@ document.getElementById('m-submit').onclick=async()=>{
   const btn=document.getElementById('m-submit');
   btn.disabled=true;btn.textContent='저장 중...';
   try{
-    await insertReport({sido,sigungu,bizname,addr,type,industry,description,date,lat,lng});
+    await insertReport({sido,sigungu,bizname,addr,type,industry,description,ownername,date,lat,lng});
     document.getElementById('f-desc').value='';
     document.getElementById('modal-report').classList.remove('open');
     const data=await fetchReports();
