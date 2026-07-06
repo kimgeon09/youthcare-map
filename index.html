@@ -133,6 +133,31 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 .popup-desc{font-size:11px;color:#bbb;line-height:1.6;max-width:220px}
 .leaflet-container{background:#1a1f1a!important}
 
+
+/* ── AI 판별 모달 ── */
+#modal-ai .modal-box{width:420px}
+#modal-ai h2{font-size:14px;font-weight:700;margin-bottom:14px}
+#ai-video-wrap{width:100%;border-radius:var(--radius);overflow:hidden;background:#000;margin-bottom:12px;text-align:center}
+#ai-video{width:100%;max-height:240px;object-fit:cover;display:block}
+#ai-canvas{display:none}
+#ai-capture-btn{width:100%;padding:10px;border-radius:var(--radius-sm);background:var(--accent);color:#0d0d0d;font-size:13px;font-weight:700;border:none;cursor:pointer;margin-bottom:12px}
+#ai-capture-btn:disabled{opacity:.5;cursor:not-allowed}
+#ai-status{font-size:11px;color:var(--text2);text-align:center;margin-bottom:10px;min-height:16px}
+#ai-result{display:none;margin-bottom:10px}
+#ai-result-title{font-size:12px;color:var(--text2);margin-bottom:8px}
+.ai-result-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);margin-bottom:6px;cursor:pointer;transition:all .15s}
+.ai-result-item:hover{border-color:var(--border2);background:var(--surface2)}
+.ai-result-item.selected{border-color:var(--accent)}
+.ai-rank{font-size:12px;font-weight:700;color:var(--text3);width:20px;flex-shrink:0}
+.ai-rank.r1{color:var(--accent)}
+.ai-info{flex:1}
+.ai-info-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.ai-info-msg{font-size:11px;color:var(--text2);line-height:1.5}
+.ai-pct{font-size:12px;font-weight:700;min-width:36px;text-align:right}
+#ai-apply-btn{width:100%;padding:9px;border-radius:var(--radius-sm);background:var(--accent);color:#0d0d0d;font-size:12px;font-weight:700;border:none;cursor:pointer;display:none;margin-top:4px}
+#ai-retry-btn{width:100%;padding:8px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;display:none;margin-top:6px}
+#ai-close-btn{width:100%;padding:8px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;margin-top:6px}
+
 /* ── 모바일 반응형 ── */
 @media (max-width: 768px) {
   #header { padding: 0 12px; height: 48px; }
@@ -231,7 +256,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
     <div class="hstat">전체 <strong id="hs-total">0</strong>건</div>
     <button class="hbtn" id="about-btn">About</button>
     <button class="hbtn" id="list-btn">목록보기</button>
-    <button id="report-btn">+ 제보하기</button>
+    <button id="ai-scan-btn" title="AI로 상황 판별" style="padding:7px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-size:13px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">📷 AI 판별</button>
+<button id="report-btn">+ 제보하기</button>
   </div>
 </div>
 
@@ -328,6 +354,29 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
       <button class="btn-cancel" id="m-cancel">취소</button>
       <button class="btn-submit" id="m-submit">익명으로 제보하기</button>
     </div>
+  </div>
+</div>
+
+<!-- AI 판별 모달 -->
+<div class="modal-bg" id="modal-ai">
+  <div class="modal-box">
+    <h2>📷 AI 부당노동 상황 판별</h2>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6;background:var(--surface2);padding:8px 11px;border-radius:var(--radius-sm);border:1px solid var(--border)">
+      카메라로 상황을 촬영하면 AI가 어떤 유형의 부당노동인지 분석해드려요.<br>분석 결과를 보고 해당하는 유형을 선택 후 제보로 이어갈 수 있어요.
+    </div>
+    <div id="ai-video-wrap">
+      <video id="ai-video" autoplay playsinline muted></video>
+      <canvas id="ai-canvas"></canvas>
+    </div>
+    <div id="ai-status">카메라를 준비하고 있어요...</div>
+    <button id="ai-capture-btn" disabled>📸 지금 상황 분석하기</button>
+    <div id="ai-result">
+      <div id="ai-result-title">🤖 AI 분석 결과 — 해당하는 유형을 선택하세요</div>
+      <div id="ai-result-list"></div>
+    </div>
+    <button id="ai-apply-btn">선택한 유형으로 제보하기 →</button>
+    <button id="ai-retry-btn">🔄 다시 촬영하기</button>
+    <button id="ai-close-btn" onclick="closeAiModal()">닫기</button>
   </div>
 </div>
 
@@ -436,6 +485,138 @@ function maskName(name){
 function goMinwon(){
   location.href='https://labor.moel.go.kr/minwonApply/minwonApply.do?searchGubun=1';
 }
+
+
+// ── Teachable Machine AI 판별 ──
+const TM_MODEL_URL = 'https://teachablemachine.withgoogle.com/models/B5YVLO9uK/';
+const TYPE_DESC = {
+  wage:     { label:'임금 체불',           msg:'최저임금 미달, 주휴수당 미지급 등 임금 관련 침해가 의심됩니다.' },
+  hour:     { label:'초과 근무 강요',       msg:'법정 근로시간 초과 또는 휴게시간 미부여가 의심됩니다.' },
+  unsafe:   { label:'위험한 근무 환경',     msg:'안전장치 미비 등 위험한 근무 환경이 감지됩니다.' },
+  contract: { label:'근로계약서 미작성',    msg:'근로계약서 미교부 또는 서면 계약 없이 구두로만 채용된 상황이 의심됩니다.' },
+  abuse:    { label:'언어·신체 폭력',       msg:'폭언, 폭행 등 언어적·신체적 폭력이 의심됩니다.' },
+};
+// 티처블머신 클래스명 → type 코드 매핑
+const TM_CLASS_MAP = {
+  '임금체불': 'wage',
+  '초과근무': 'hour',
+  '위험환경': 'unsafe',
+  '계약 미작성': 'contract',
+  '폭력폭언': 'abuse',
+};
+
+let tmModel = null, tmStream = null, selectedAiType = null;
+
+async function openAiModal() {
+  document.getElementById('modal-ai').classList.add('open');
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-apply-btn').style.display = 'none';
+  document.getElementById('ai-retry-btn').style.display = 'none';
+  document.getElementById('ai-capture-btn').disabled = true;
+  document.getElementById('ai-status').textContent = '카메라를 준비하고 있어요...';
+  selectedAiType = null;
+
+  try {
+    // 카메라 스트림
+    tmStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    const video = document.getElementById('ai-video');
+    video.srcObject = tmStream;
+    await video.play();
+
+    // 모델 로드
+    document.getElementById('ai-status').textContent = 'AI 모델 불러오는 중...';
+    if (!tmModel) {
+      const modelURL = TM_MODEL_URL + 'model.json';
+      const metadataURL = TM_MODEL_URL + 'metadata.json';
+      tmModel = await tmImage.load(modelURL, metadataURL);
+    }
+    document.getElementById('ai-status').textContent = '✅ 준비 완료! 상황을 카메라에 비춰주세요.';
+    document.getElementById('ai-capture-btn').disabled = false;
+  } catch(e) {
+    document.getElementById('ai-status').textContent = '⚠️ 카메라 접근이 거부되었습니다. 브라우저 설정을 확인해주세요.';
+    console.error(e);
+  }
+}
+
+async function runAiPredict() {
+  const btn = document.getElementById('ai-capture-btn');
+  btn.disabled = true;
+  document.getElementById('ai-status').textContent = '🔍 AI가 분석 중이에요...';
+
+  try {
+    const video = document.getElementById('ai-video');
+    const predictions = await tmModel.predict(video);
+
+    // 점수 높은 순 정렬
+    const sorted = predictions
+      .map(p => ({ className: p.className, prob: p.probability }))
+      .sort((a, b) => b.prob - a.prob)
+      .slice(0, 3);
+
+    const list = document.getElementById('ai-result-list');
+    list.innerHTML = '';
+    sorted.forEach((item, idx) => {
+      const typeCode = TM_CLASS_MAP[item.className] || Object.values(TM_CLASS_MAP)[idx] || 'wage';
+      const info = TYPE_DESC[typeCode];
+      const pct = Math.round(item.prob * 100);
+      const el = document.createElement('div');
+      el.className = 'ai-result-item' + (idx === 0 ? ' selected' : '');
+      el.dataset.type = typeCode;
+      el.innerHTML = `
+        <div class="ai-rank ${idx===0?'r1':''}">${idx===0?'1순위':idx===1?'2순위':'3순위'}</div>
+        <div class="ai-info">
+          <div class="ai-info-title">${info.label}</div>
+          <div class="ai-info-msg">${info.msg}</div>
+        </div>
+        <div class="ai-pct" style="color:${idx===0?'var(--accent)':'var(--text2)'}">${pct}%</div>`;
+      el.onclick = () => {
+        document.querySelectorAll('.ai-result-item').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedAiType = typeCode;
+      };
+      list.appendChild(el);
+      if (idx === 0) selectedAiType = typeCode;
+    });
+
+    document.getElementById('ai-result').style.display = 'block';
+    document.getElementById('ai-apply-btn').style.display = 'block';
+    document.getElementById('ai-retry-btn').style.display = 'block';
+    document.getElementById('ai-status').textContent = '분석이 완료됐어요! 해당하는 유형을 선택해주세요.';
+  } catch(e) {
+    document.getElementById('ai-status').textContent = '⚠️ 분석 중 오류가 발생했어요.';
+    btn.disabled = false;
+    console.error(e);
+  }
+}
+
+function closeAiModal() {
+  document.getElementById('modal-ai').classList.remove('open');
+  if (tmStream) { tmStream.getTracks().forEach(t => t.stop()); tmStream = null; }
+}
+
+function applyAiResult() {
+  if (!selectedAiType) return;
+  closeAiModal();
+  // 제보 모달 열고 유형 자동 선택
+  initForm();
+  document.getElementById('modal-report').classList.add('open');
+  document.getElementById('f-type').value = selectedAiType;
+}
+
+document.getElementById('ai-scan-btn').onclick = openAiModal;
+document.getElementById('ai-capture-btn').onclick = runAiPredict;
+document.getElementById('ai-apply-btn').onclick = applyAiResult;
+document.getElementById('ai-retry-btn').onclick = () => {
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-apply-btn').style.display = 'none';
+  document.getElementById('ai-retry-btn').style.display = 'none';
+  document.getElementById('ai-capture-btn').disabled = false;
+  document.getElementById('ai-status').textContent = '✅ 준비 완료! 상황을 카메라에 비춰주세요.';
+  selectedAiType = null;
+};
+document.getElementById('modal-ai').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-ai')) closeAiModal();
+});
 
 (async()=>{
     const data=await fetchReports();
