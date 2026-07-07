@@ -488,7 +488,15 @@ let selectedLat=null,selectedLng=null,selectedAddr='';
 
 // ── 지도 ──
 const map=L.map('map',{center:[37.4750,126.6700],zoom:12});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+let tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+
+function updateMapTile(isDark) {
+  map.removeLayer(tileLayer);
+  const url = isDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  tileLayer = L.tileLayer(url, {attribution:'&copy; OpenStreetMap &copy; CARTO', subdomains:'abcd', maxZoom:19}).addTo(map);
+}
 
 // ── Supabase ──
 async function fetchReports(){
@@ -532,6 +540,10 @@ function applyTheme(theme) {
   const label = document.getElementById('theme-label');
   if (icon) icon.textContent = THEME_ICONS[theme];
   if (label) label.textContent = THEME_LABELS[theme];
+  // 지도 타일도 같이 변경
+  if (typeof map !== 'undefined' && typeof updateMapTile === 'function') {
+    updateMapTile(isDark);
+  }
 }
 
 function cycleTheme() {
