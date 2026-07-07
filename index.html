@@ -158,6 +158,35 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 #ai-retry-btn{width:100%;padding:8px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;display:none;margin-top:6px}
 #ai-close-btn{width:100%;padding:8px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;margin-top:6px}
 
+
+/* ── 라이트 모드 ── */
+body.light-mode {
+  --bg:#f5f5f5;--surface:#ffffff;--surface2:#f0f0f0;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --text:#1a1a1a;--text2:#555;--text3:#aaa;
+}
+body.light-mode .leaflet-container{background:#e8ede8!important}
+body.light-mode #header{background:rgba(245,245,245,0.92)}
+body.light-mode #filter-bar{background:rgba(240,240,240,0.95)}
+body.light-mode #side-panel{background:rgba(250,250,250,0.97)}
+body.light-mode #counter{background:rgba(245,245,245,0.95)}
+body.light-mode #list-toggle{background:rgba(245,245,245,0.95)}
+body.light-mode #notice-popup{background:#f0eaf8;border-color:rgba(140,80,200,0.4)}
+body.light-mode #notice-popup-footer{background:#e8dff5;border-color:rgba(140,80,200,0.2)}
+body.light-mode .modal-box{background:#ffffff}
+body.light-mode .report-item{background:#ffffff}
+body.light-mode .report-item:hover{background:#f5f5f5}
+body.light-mode .fg select,
+body.light-mode .fg input,
+body.light-mode .fg textarea{background:#f5f5f5;color:#1a1a1a;border-color:rgba(0,0,0,0.2)}
+body.light-mode .notice-box{background:#f0f0f0;border-color:rgba(0,0,0,0.1)}
+body.light-mode .leaflet-popup-content-wrapper{background:rgba(255,255,255,0.97)!important;border-color:rgba(0,0,0,0.15)!important;color:#1a1a1a!important}
+body.light-mode .leaflet-popup-tip{background:rgba(255,255,255,0.97)!important}
+body.light-mode .popup-biz{color:#1a1a1a}
+body.light-mode .popup-addr,.popup-desc{color:#555}
+body.light-mode #ai-video-wrap{background:#eee}
+body.light-mode #loading-overlay{background:#f5f5f5}
+
 /* ── 모바일 반응형 ── */
 @media (max-width: 768px) {
   #header { padding: 0 12px; height: 48px; }
@@ -253,6 +282,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
     유스케어<span style="font-weight:400;color:var(--text2);font-size:12px;margin-left:4px">· 청소년 노동권 지도</span>
   </div>
   <div id="header-right">
+    <button id="theme-btn" onclick="cycleTheme()" title="테마 변경" style="padding:6px 10px;border-radius:20px;font-size:13px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s">🌙</button>
     <div class="hstat">전체 <strong id="hs-total">0</strong>건</div>
     <button class="hbtn" id="about-btn">About</button>
     <button class="hbtn" id="list-btn">목록보기</button>
@@ -486,6 +516,38 @@ function goMinwon(){
   location.href='https://labor.moel.go.kr/minwonApply/minwonApply.do?searchGubun=1';
 }
 
+
+
+// ── 테마 설정 ──
+const THEMES = ['dark', 'light', 'system'];
+const THEME_ICONS = { dark:'🌙', light:'☀️', system:'🖥️' };
+const THEME_LABELS = { dark:'다크', light:'라이트', system:'기기설정' };
+let currentTheme = localStorage.getItem('theme') || 'dark';
+
+function applyTheme(theme) {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+  document.body.classList.toggle('light-mode', !isDark);
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    btn.textContent = THEME_ICONS[theme];
+    btn.title = THEME_LABELS[theme] + ' 모드';
+  }
+}
+
+function cycleTheme() {
+  const idx = THEMES.indexOf(currentTheme);
+  currentTheme = THEMES[(idx + 1) % THEMES.length];
+  localStorage.setItem('theme', currentTheme);
+  applyTheme(currentTheme);
+}
+
+// 기기 테마 변경 감지
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (currentTheme === 'system') applyTheme('system');
+});
+
+applyTheme(currentTheme);
 
 // ── Teachable Machine AI 판별 ──
 const TM_MODEL_URL = 'https://teachablemachine.withgoogle.com/models/B5YVLO9uK/';
