@@ -1,0 +1,19 @@
+name: Supabase Keep-Alive Ping
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # 매주 월요일 자정 자동 실행
+  workflow_dispatch:      # 수동 실행도 가능
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          curl -X GET "https://lvwviplgtsxwoljpedlc.supabase.co/rest/v1/reports?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2d3ZpcGxndHN4d29sanBlZGxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTUyNDAsImV4cCI6MjA5NTc5MTI0MH0.s9zmNBikhUoIrhrgrf_1H2Z6mBGlnoTPX8t00_kVdJo" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2d3ZpcGxndHN4d29sanBlZGxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTUyNDAsImV4cCI6MjA5NTc5MTI0MH0.s9zmNBikhUoIrhrgrf_1H2Z6mBGlnoTPX8t00_kVdJo" \
+            -w "\nHTTP Status: %{http_code}\n" \
+            --fail
+          echo "Supabase ping 완료!"
