@@ -622,27 +622,34 @@ function closeAiModal() {
 function applyAiResult() {
   if (!selectedAiType) return;
   const typeToApply = selectedAiType;
-  // 카메라 종료
-  document.getElementById('modal-ai').classList.remove('open');
+
+  // 1. 카메라 완전 종료
   if (tmStream) { tmStream.getTracks().forEach(t => t.stop()); tmStream = null; }
   const video = document.getElementById('ai-video');
   if (video) { video.srcObject = null; }
-  // 제보 모달 열기
+
+  // 2. AI 모달 숨김
+  document.getElementById('modal-ai').classList.remove('open');
+
+  // 3. 제보 폼 초기화
   initForm();
-  document.getElementById('modal-report').classList.add('open');
-  // 유형 자동 선택
-  requestAnimationFrame(() => {
-    const sel = document.getElementById('f-type');
-    if (sel) {
-      sel.value = typeToApply;
-      sel.style.borderColor = 'var(--accent)';
-      sel.style.boxShadow = '0 0 0 2px rgba(232,255,71,0.3)';
-      setTimeout(() => {
-        sel.style.borderColor = '';
-        sel.style.boxShadow = '';
-      }, 2500);
-    }
-  });
+
+  // 4. 제보 모달 강제 표시
+  const reportModal = document.getElementById('modal-report');
+  reportModal.style.display = 'flex';
+  reportModal.classList.add('open');
+
+  // 5. 침해 유형 선택 강제 적용
+  const sel = document.getElementById('f-type');
+  if (sel) {
+    sel.value = typeToApply;
+    sel.style.borderColor = 'var(--accent)';
+    sel.style.boxShadow = '0 0 0 3px rgba(232,255,71,0.4)';
+    setTimeout(() => {
+      sel.style.borderColor = '';
+      sel.style.boxShadow = '';
+    }, 3000);
+  }
 }
 
 document.getElementById('ai-scan-btn').onclick = openAiModal;
