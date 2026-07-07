@@ -613,10 +613,7 @@ async function runAiPredict() {
 }
 
 function closeAiModal() {
-  const modal = document.getElementById('modal-ai');
-  modal.classList.remove('open');
-  modal.style.display = 'none';
-  setTimeout(() => { modal.style.display = ''; }, 100);
+  document.getElementById('modal-ai').classList.remove('open');
   if (tmStream) { tmStream.getTracks().forEach(t => t.stop()); tmStream = null; }
   const video = document.getElementById('ai-video');
   if (video) { video.srcObject = null; }
@@ -625,20 +622,27 @@ function closeAiModal() {
 function applyAiResult() {
   if (!selectedAiType) return;
   const typeToApply = selectedAiType;
-  closeAiModal();
-  // AI 모달 완전히 닫힌 후 제보 모달 열기
-  setTimeout(() => {
-    initForm();
-    document.getElementById('modal-report').classList.add('open');
-    // 침해 유형 자동 선택 (약간 지연으로 DOM 확실히 준비 후)
-    setTimeout(() => {
-      const sel = document.getElementById('f-type');
-      if (sel) sel.value = typeToApply;
-      // 선택된 유형 강조
+  // 카메라 종료
+  document.getElementById('modal-ai').classList.remove('open');
+  if (tmStream) { tmStream.getTracks().forEach(t => t.stop()); tmStream = null; }
+  const video = document.getElementById('ai-video');
+  if (video) { video.srcObject = null; }
+  // 제보 모달 열기
+  initForm();
+  document.getElementById('modal-report').classList.add('open');
+  // 유형 자동 선택
+  requestAnimationFrame(() => {
+    const sel = document.getElementById('f-type');
+    if (sel) {
+      sel.value = typeToApply;
       sel.style.borderColor = 'var(--accent)';
-      setTimeout(() => { sel.style.borderColor = ''; }, 2000);
-    }, 100);
-  }, 150);
+      sel.style.boxShadow = '0 0 0 2px rgba(232,255,71,0.3)';
+      setTimeout(() => {
+        sel.style.borderColor = '';
+        sel.style.boxShadow = '';
+      }, 2500);
+    }
+  });
 }
 
 document.getElementById('ai-scan-btn').onclick = openAiModal;
