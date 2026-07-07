@@ -624,11 +624,21 @@ function closeAiModal() {
 
 function applyAiResult() {
   if (!selectedAiType) return;
+  const typeToApply = selectedAiType;
   closeAiModal();
-  // 제보 모달 열고 유형 자동 선택
-  initForm();
-  document.getElementById('modal-report').classList.add('open');
-  document.getElementById('f-type').value = selectedAiType;
+  // AI 모달 완전히 닫힌 후 제보 모달 열기
+  setTimeout(() => {
+    initForm();
+    document.getElementById('modal-report').classList.add('open');
+    // 침해 유형 자동 선택 (약간 지연으로 DOM 확실히 준비 후)
+    setTimeout(() => {
+      const sel = document.getElementById('f-type');
+      if (sel) sel.value = typeToApply;
+      // 선택된 유형 강조
+      sel.style.borderColor = 'var(--accent)';
+      setTimeout(() => { sel.style.borderColor = ''; }, 2000);
+    }, 100);
+  }, 150);
 }
 
 document.getElementById('ai-scan-btn').onclick = openAiModal;
