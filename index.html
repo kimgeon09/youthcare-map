@@ -516,8 +516,8 @@ async function openAiModal() {
   document.getElementById('ai-status').textContent = '카메라를 준비하고 있어요...';
   selectedAiType = null;
 
+  // 카메라 먼저 실행
   try {
-    // 카메라 스트림 - 후면 우선, 실패 시 기본 카메라
     try {
       tmStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     } catch(e2) {
@@ -525,21 +525,39 @@ async function openAiModal() {
     }
     const video = document.getElementById('ai-video');
     video.srcObject = tmStream;
-    await video.play();
+    video.onloadedmetadata = () => { video.play(); };
+  } catch(e) {
+    document.getElementById('ai-status').textContent = '⚠️ 카메라 오류: ' + e.message;
+    console.error('카메라 오류:', e);
+    return;
+  }
 
-    // 모델 로드
-    document.getElementById('ai-status').textContent = 'AI 모델 불러오는 중...';
+  // TM 라이브러리 로드 확인 후 모델 로드
+  document.getElementById('ai-status').textContent = 'AI 모델 불러오는 중...';
+  try {
+    if (typeof tmImage === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const s1 = document.createElement('script');
+        s1.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js';
+        s1.onload = () => {
+          const s2 = document.createElement('script');
+          s2.src = 'https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js';
+          s2.onload = resolve;
+          s2.onerror = reject;
+          document.head.appendChild(s2);
+        };
+        s1.onerror = reject;
+        document.head.appendChild(s1);
+      });
+    }
     if (!tmModel) {
-      const modelURL = TM_MODEL_URL + 'model.json';
-      const metadataURL = TM_MODEL_URL + 'metadata.json';
-      tmModel = await tmImage.load(modelURL, metadataURL);
+      tmModel = await tmImage.load(TM_MODEL_URL + 'model.json', TM_MODEL_URL + 'metadata.json');
     }
     document.getElementById('ai-status').textContent = '✅ 준비 완료! 상황을 카메라에 비춰주세요.';
     document.getElementById('ai-capture-btn').disabled = false;
   } catch(e) {
-    document.getElementById('ai-status').textContent = '⚠️ 카메라 접근이 거부되었습니다. 브라우저 주소창 왼쪽 🔒 아이콘 → 카메라 허용으로 변경해주세요.';
-    document.getElementById('ai-capture-btn').disabled = true;
-    console.error(e);
+    document.getElementById('ai-status').textContent = '⚠️ AI 모델 로딩 실패: ' + e.message;
+    console.error('모델 오류:', e);
   }
 }
 
