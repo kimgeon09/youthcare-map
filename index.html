@@ -187,6 +187,27 @@ body.light-mode .popup-addr,.popup-desc{color:#555}
 body.light-mode #ai-video-wrap{background:#eee}
 body.light-mode #loading-overlay{background:#f5f5f5}
 
+
+/* ── 설정 패널 ── */
+#settings-panel{position:fixed;top:52px;left:0;bottom:0;width:260px;z-index:800;background:var(--surface);backdrop-filter:blur(14px);border-right:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+#settings-panel.open{transform:translateX(0)}
+#settings-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+#settings-header h3{font-size:13px;font-weight:600}
+#settings-close{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#settings-body{padding:16px;flex:1}
+.settings-section{margin-bottom:20px}
+.settings-section h4{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
+.theme-options{display:flex;flex-direction:column;gap:8px}
+.theme-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--surface2)}
+.theme-option:hover{border-color:var(--border2)}
+.theme-option.active{border-color:var(--accent);background:rgba(232,255,71,0.08)}
+.theme-option-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.theme-option-info{flex:1}
+.theme-option-title{font-size:13px;font-weight:600}
+.theme-option-desc{font-size:11px;color:var(--text2);margin-top:2px}
+.theme-option-check{font-size:14px;color:var(--accent);flex-shrink:0;opacity:0}
+.theme-option.active .theme-option-check{opacity:1}
+
 /* ── 모바일 반응형 ── */
 @media (max-width: 768px) {
   #header { padding: 0 12px; height: 48px; }
@@ -282,7 +303,7 @@ body.light-mode #loading-overlay{background:#f5f5f5}
     유스케어<span style="font-weight:400;color:var(--text2);font-size:12px;margin-left:4px">· 청소년 노동권 지도</span>
   </div>
   <div id="header-right">
-    <button id="theme-btn" onclick="cycleTheme()" title="테마 변경" style="padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px"><span id="theme-icon">🌙</span><span id="theme-label" style="font-size:11px;color:var(--text2)">다크</span></button>
+    <button onclick="toggleSettings()" style="padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s">⚙️ 설정</button>
     <div class="hstat">전체 <strong id="hs-total">0</strong>건</div>
     <button class="hbtn" id="about-btn">About</button>
     <button class="hbtn" id="list-btn">목록보기</button>
@@ -410,6 +431,45 @@ body.light-mode #loading-overlay{background:#f5f5f5}
   </div>
 </div>
 
+<!-- 설정 패널 -->
+<div id="settings-panel">
+  <div id="settings-header">
+    <h3>⚙️ 설정</h3>
+    <button id="settings-close" onclick="toggleSettings()">✕</button>
+  </div>
+  <div id="settings-body">
+    <div class="settings-section">
+      <h4>테마</h4>
+      <div class="theme-options">
+        <div class="theme-option" id="theme-opt-dark" onclick="setTheme('dark')">
+          <div class="theme-option-icon">🌙</div>
+          <div class="theme-option-info">
+            <div class="theme-option-title">다크 모드</div>
+            <div class="theme-option-desc">어두운 배경 테마</div>
+          </div>
+          <div class="theme-option-check">✓</div>
+        </div>
+        <div class="theme-option" id="theme-opt-light" onclick="setTheme('light')">
+          <div class="theme-option-icon">☀️</div>
+          <div class="theme-option-info">
+            <div class="theme-option-title">라이트 모드</div>
+            <div class="theme-option-desc">밝은 배경 테마</div>
+          </div>
+          <div class="theme-option-check">✓</div>
+        </div>
+        <div class="theme-option" id="theme-opt-system" onclick="setTheme('system')">
+          <div class="theme-option-icon">🖥️</div>
+          <div class="theme-option-info">
+            <div class="theme-option-title">기기 설정</div>
+            <div class="theme-option-desc">기기 테마에 자동 맞춤</div>
+          </div>
+          <div class="theme-option-check">✓</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- About 모달 -->
 <div class="modal-bg" id="modal-about">
   <div class="modal-box">
@@ -527,30 +587,28 @@ function goMinwon(){
 
 
 // ── 테마 설정 ──
-const THEMES = ['dark', 'light', 'system'];
-const THEME_ICONS = { dark:'🌙', light:'☀️', system:'🖥️' };
-const THEME_LABELS = { dark:'다크', light:'라이트', system:'기기설정' };
 let currentTheme = localStorage.getItem('theme') || 'dark';
+
+function setTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('theme', theme);
+  applyTheme(theme);
+  // 선택 표시 업데이트
+  ['dark','light','system'].forEach(t => {
+    const el = document.getElementById('theme-opt-' + t);
+    if (el) el.classList.toggle('active', t === theme);
+  });
+}
 
 function applyTheme(theme) {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
   document.body.classList.toggle('light-mode', !isDark);
-  const icon = document.getElementById('theme-icon');
-  const label = document.getElementById('theme-label');
-  if (icon) icon.textContent = THEME_ICONS[theme];
-  if (label) label.textContent = THEME_LABELS[theme];
-  // 지도 타일도 같이 변경
-  if (typeof map !== 'undefined' && typeof updateMapTile === 'function') {
-    updateMapTile(isDark);
-  }
+  if (typeof updateMapTile === 'function') updateMapTile(isDark);
 }
 
-function cycleTheme() {
-  const idx = THEMES.indexOf(currentTheme);
-  currentTheme = THEMES[(idx + 1) % THEMES.length];
-  localStorage.setItem('theme', currentTheme);
-  applyTheme(currentTheme);
+function toggleSettings() {
+  document.getElementById('settings-panel').classList.toggle('open');
 }
 
 // 기기 테마 변경 감지
@@ -558,7 +616,12 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
   if (currentTheme === 'system') applyTheme('system');
 });
 
+// 초기 적용
 applyTheme(currentTheme);
+setTimeout(() => {
+  const el = document.getElementById('theme-opt-' + currentTheme);
+  if (el) el.classList.add('active');
+}, 0);
 
 // ── Teachable Machine AI 판별 ──
 const TM_MODEL_URL = 'https://teachablemachine.withgoogle.com/models/B5YVLO9uK/';
