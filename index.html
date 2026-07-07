@@ -376,7 +376,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
     </div>
     <button id="ai-apply-btn">선택한 유형으로 제보하기 →</button>
     <button id="ai-retry-btn">🔄 다시 촬영하기</button>
-    <button id="ai-close-btn" onclick="closeAiModal()">닫기</button>
+    <button id="ai-close-btn" onclick="closeAiModal()" style="position:relative;z-index:99999">닫기</button>
   </div>
 </div>
 
@@ -517,8 +517,12 @@ async function openAiModal() {
   selectedAiType = null;
 
   try {
-    // 카메라 스트림
-    tmStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    // 카메라 스트림 - 후면 우선, 실패 시 기본 카메라
+    try {
+      tmStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch(e2) {
+      tmStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
     const video = document.getElementById('ai-video');
     video.srcObject = tmStream;
     await video.play();
@@ -533,7 +537,8 @@ async function openAiModal() {
     document.getElementById('ai-status').textContent = '✅ 준비 완료! 상황을 카메라에 비춰주세요.';
     document.getElementById('ai-capture-btn').disabled = false;
   } catch(e) {
-    document.getElementById('ai-status').textContent = '⚠️ 카메라 접근이 거부되었습니다. 브라우저 설정을 확인해주세요.';
+    document.getElementById('ai-status').textContent = '⚠️ 카메라 접근이 거부되었습니다. 브라우저 주소창 왼쪽 🔒 아이콘 → 카메라 허용으로 변경해주세요.';
+    document.getElementById('ai-capture-btn').disabled = true;
     console.error(e);
   }
 }
@@ -590,8 +595,13 @@ async function runAiPredict() {
 }
 
 function closeAiModal() {
-  document.getElementById('modal-ai').classList.remove('open');
+  const modal = document.getElementById('modal-ai');
+  modal.classList.remove('open');
+  modal.style.display = 'none';
+  setTimeout(() => { modal.style.display = ''; }, 100);
   if (tmStream) { tmStream.getTracks().forEach(t => t.stop()); tmStream = null; }
+  const video = document.getElementById('ai-video');
+  if (video) { video.srcObject = null; }
 }
 
 function applyAiResult() {
