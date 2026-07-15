@@ -159,54 +159,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,'Pretendard',san
 #ai-close-btn{width:100%;padding:8px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;margin-top:6px}
 
 
-/* ── 라이트 모드 ── */
-body.light-mode {
-  --bg:#f5f5f5;--surface:#ffffff;--surface2:#f0f0f0;
-  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
-  --text:#1a1a1a;--text2:#555;--text3:#aaa;
-}
-body.light-mode .leaflet-container{background:#e8ede8!important}
-body.light-mode #header{background:rgba(245,245,245,0.92)}
-body.light-mode #filter-bar{background:rgba(240,240,240,0.95)}
-body.light-mode #side-panel{background:rgba(250,250,250,0.97)}
-body.light-mode #counter{background:rgba(245,245,245,0.95)}
-body.light-mode #list-toggle{background:rgba(245,245,245,0.95)}
-body.light-mode #notice-popup{background:#f0eaf8;border-color:rgba(140,80,200,0.4)}
-body.light-mode #notice-popup-footer{background:#e8dff5;border-color:rgba(140,80,200,0.2)}
-body.light-mode .modal-box{background:#ffffff}
-body.light-mode .report-item{background:#ffffff}
-body.light-mode .report-item:hover{background:#f5f5f5}
-body.light-mode .fg select,
-body.light-mode .fg input,
-body.light-mode .fg textarea{background:#f5f5f5;color:#1a1a1a;border-color:rgba(0,0,0,0.2)}
-body.light-mode .notice-box{background:#f0f0f0;border-color:rgba(0,0,0,0.1)}
-body.light-mode .leaflet-popup-content-wrapper{background:rgba(255,255,255,0.97)!important;border-color:rgba(0,0,0,0.15)!important;color:#1a1a1a!important}
-body.light-mode .leaflet-popup-tip{background:rgba(255,255,255,0.97)!important}
-body.light-mode .popup-biz{color:#1a1a1a}
-body.light-mode .popup-addr,.popup-desc{color:#555}
-body.light-mode #ai-video-wrap{background:#eee}
-body.light-mode #loading-overlay{background:#f5f5f5}
 
 
-
-
-/* ── 설정 모달 ── */
-#modal-settings{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center}
-#modal-settings.open{display:flex}
-#settings-box{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:22px;width:300px}
-#settings-box h2{font-size:14px;font-weight:700;margin-bottom:18px}
-.s-section-title{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
-.theme-btns{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
-.theme-btn-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--surface2)}
-.theme-btn-item:hover{border-color:var(--border2)}
-.theme-btn-item.active{border-color:var(--accent);background:rgba(232,255,71,0.08)}
-.tbi-icon{font-size:20px;width:24px;text-align:center}
-.tbi-info{flex:1}
-.tbi-title{font-size:13px;font-weight:600}
-.tbi-desc{font-size:11px;color:var(--text2);margin-top:1px}
-.tbi-check{color:var(--accent);font-size:14px;opacity:0}
-.theme-btn-item.active .tbi-check{opacity:1}
-.s-close-btn{width:100%;padding:9px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer}
 
 /* ── 모바일 반응형 ── */
 @media (max-width: 768px) {
@@ -303,7 +257,7 @@ body.light-mode #loading-overlay{background:#f5f5f5}
     유스케어<span style="font-weight:400;color:var(--text2);font-size:12px;margin-left:4px">· 청소년 노동권 지도</span>
   </div>
   <div id="header-right">
-    <button id="settings-btn" style="padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s">⚙️ 설정</button>
+    
     <div class="hstat">전체 <strong id="hs-total">0</strong>건</div>
     <button class="hbtn" id="about-btn">About</button>
     <button class="hbtn" id="list-btn">목록보기</button>
@@ -431,32 +385,6 @@ body.light-mode #loading-overlay{background:#f5f5f5}
   </div>
 </div>
 
-<!-- 설정 모달 -->
-<div id="modal-settings">
-  <div id="settings-box">
-    <h2>⚙️ 설정</h2>
-    <div class="s-section-title">테마</div>
-    <div class="theme-btns">
-      <div class="theme-btn-item" id="tbi-dark">
-        <div class="tbi-icon">🌙</div>
-        <div class="tbi-info"><div class="tbi-title">다크 모드</div><div class="tbi-desc">어두운 배경 테마</div></div>
-        <div class="tbi-check">✓</div>
-      </div>
-      <div class="theme-btn-item" id="tbi-light">
-        <div class="tbi-icon">☀️</div>
-        <div class="tbi-info"><div class="tbi-title">라이트 모드</div><div class="tbi-desc">밝은 배경 테마</div></div>
-        <div class="tbi-check">✓</div>
-      </div>
-      <div class="theme-btn-item" id="tbi-system">
-        <div class="tbi-icon">🖥️</div>
-        <div class="tbi-info"><div class="tbi-title">기기 설정</div><div class="tbi-desc">기기 테마에 자동 맞춤</div></div>
-        <div class="tbi-check">✓</div>
-      </div>
-    </div>
-    <button class="s-close-btn" id="settings-close-btn">닫기</button>
-  </div>
-</div>
-
 <!-- About 모달 -->
 <div class="modal-bg" id="modal-about">
   <div class="modal-box">
@@ -573,50 +501,7 @@ function goMinwon(){
 
 
 
-// ── 테마 설정 ──
-let currentTheme = localStorage.getItem('theme') || 'dark';
 
-function applyTheme(theme) {
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
-  document.body.classList.toggle('light-mode', !isDark);
-  if (typeof updateMapTile === 'function') updateMapTile(isDark);
-  // 체크 표시 업데이트
-  ['dark','light','system'].forEach(t => {
-    const el = document.getElementById('tbi-' + t);
-    if (el) el.classList.toggle('active', t === theme);
-  });
-}
-
-function setTheme(theme) {
-  currentTheme = theme;
-  localStorage.setItem('theme', theme);
-  applyTheme(theme);
-}
-
-// 기기 테마 변경 감지
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (currentTheme === 'system') applyTheme('system');
-});
-
-// 초기 적용
-applyTheme(currentTheme);
-
-// 설정 모달 이벤트
-window.addEventListener('load', function() {
-  document.getElementById('settings-btn').addEventListener('click', function() {
-    document.getElementById('modal-settings').classList.add('open');
-  });
-  document.getElementById('settings-close-btn').addEventListener('click', function() {
-    document.getElementById('modal-settings').classList.remove('open');
-  });
-  document.getElementById('modal-settings').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('open');
-  });
-  document.getElementById('tbi-dark').addEventListener('click', function() { setTheme('dark'); });
-  document.getElementById('tbi-light').addEventListener('click', function() { setTheme('light'); });
-  document.getElementById('tbi-system').addEventListener('click', function() { setTheme('system'); });
-});
 
 // ── Teachable Machine AI 판별 ──
 const TM_MODEL_URL = 'https://teachablemachine.withgoogle.com/models/B5YVLO9uK/';
